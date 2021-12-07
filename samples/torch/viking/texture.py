@@ -11,7 +11,7 @@ import numpy as np
 import torch
 import nvdiffrast.torch as dr
 
-from . import util
+import util
 
 ########################################################################################################
 # Simple texture class. A texture can be either 

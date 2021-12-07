@@ -10,9 +10,9 @@ import os
 import numpy as np
 import torch
 import pdb
-from . import util
-from . import texture
-from . import mesh
+import util
+import texture
+#import mesh
 
 ######################################################################################
 # .mtl material format loading / storing
