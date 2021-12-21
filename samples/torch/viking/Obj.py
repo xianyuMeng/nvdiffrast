@@ -8,7 +8,7 @@ import texture, material, util
 import torch
 
 def aabb(vertex):
-    return torch.min(vertex, dim=0).values, torch.max(vertex, dim=0).values
+    return np.min(vertex, axis=0), np.max(vertex, axis=0)
 
 def center_mesh(base, ref, scale=2.0):
     '''
@@ -20,7 +20,7 @@ def center_mesh(base, ref, scale=2.0):
     '''
     ref_aabb = aabb(ref['vertex'])
     center = (ref_aabb[0] + ref_aabb[1]) * 0.5
-    scale = scale/torch.max(ref_aabb[1] - ref_aabb[0]).item()
+    scale = scale/np.max(ref_aabb[1] - ref_aabb[0])
     vertex_scaled = (base['vertex'] - center[None, ...]) * scale
     out = base
     out['vertex'] = vertex_scaled
@@ -122,7 +122,7 @@ def readObj(fname):
                 'vface' : np.array(vface, dtype = np.int32), \
                 'tface' : np.array(tface, dtype = np.int32), \
                 'nface' : np.array(nface, np.int32), \
-                'vertex' : vertex, \
-                'normal' : normal, \
-                'texcoord' : texcoord} 
+                'vertex' : np.array(vertex, dtype = np.float32), \
+                'normal' : np.array(normal, dtype = np.float32), \
+                'texcoord' : np.array(texcoord, dtype = np.float32)} 
 

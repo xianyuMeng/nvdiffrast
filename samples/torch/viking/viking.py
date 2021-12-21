@@ -86,6 +86,7 @@ def opt_viking(
     ref_mesh = Obj.readObj(ref)
     base_mesh = Obj.readObj(base)
 
+    base_mesh = Obj.center_mesh(base_mesh, ref_mesh)
 
     # Create position/triangle index tensors
     triangles = torch.from_numpy(ref_mesh['vface'].astype(np.int32)).cuda()
