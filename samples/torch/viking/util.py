@@ -335,8 +335,12 @@ def save_image(fn, x : np.ndarray) -> np.ndarray:
 
 def load_image(fn) -> np.ndarray:
     #img = imageio.imread(fn)
-    img = np.asarray(Image.open(fn))
-
+    #img = image.imread(fn)
+    img = Image.open(fn)
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
+    img = np.asarray(img)
+    print(img.shape)
     if img.dtype == np.float32: # HDR image
         return img
     else: # LDR image

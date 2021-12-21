@@ -9,10 +9,11 @@
 import os
 import numpy as np
 import torch
-import pdb
+
 import util
 import texture
-#import mesh
+
+import pdb
 
 ######################################################################################
 # .mtl material format loading / storing
@@ -32,13 +33,16 @@ def load_mtl(fn, clear_ks=True):
         split_line = re.split(' +|\t+|\n+', line.strip())
         prefix = split_line[0].lower()
         data = split_line[1:]
-#        pdb.set_trace()
-        if 'newmtl' in prefix:
+        if prefix == '#':
+            continue
+        elif 'newmtl' in prefix:
             material = {'name' : data[0]}
             materials += [material]
         elif materials:
-            if 'bsdf' in prefix or 'map_kd' in prefix or 'map_ks' in prefix or 'bump' in prefix or 'map_ka' in prefix:
+            if 'bsdf' in prefix or 'map_kd' in prefix or 'map_ks' in prefix or 'bump' in prefix:
                 material[prefix] = data[0]
+            elif 'map_ka' in prefix:
+                continue
             else:
                 material[prefix] = torch.tensor(tuple(float(d) for d in data), dtype=torch.float32, device='cuda')
 
@@ -47,16 +51,12 @@ def load_mtl(fn, clear_ks=True):
         if not 'bsdf' in mat:
             mat['bsdf'] = 'pbr'
 
-        if 'map_ka' in mat:
-            mat['ka'] = texture.load_texture2D(os.path.join(mtl_path, mat['map_ka']), channels=3)
-        else:
-            if('ka' in mat.keys()):
-                mat['ka'] = texture.Texture2D(mat['ka'])
-
         if 'map_kd' in mat:
             mat['kd'] = texture.load_texture2D(os.path.join(mtl_path, mat['map_kd']))
         else:
             mat['kd'] = texture.Texture2D(mat['kd'])
+
+    
         
         if 'map_ks' in mat:
             mat['ks'] = texture.load_texture2D(os.path.join(mtl_path, mat['map_ks']), channels=3)
@@ -130,16 +130,16 @@ def merge_materials(materials, texcoords, tfaces, mfaces):
 
     # Normalize texture resolution across all materials & combine into a single large texture
     for tex in textures:
-        pdb.set_trace()
         if tex in materials[0]:
+            #pdb.set_trace()
+            layout = []
             for mat in materials:
-                #size = mat[tex].data.shape
-                #res_size = (size[0], max_res[0], max_res[1], size[3])
-                res_size = tuple(max_res)
-                mat[tex].resize(res_size)
-                print('tex:', tex, mat[tex].data.shape, max_res)
-            pdb.set_trace()
-            tex_data = torch.cat(tuple(util.scale_img_nhwc(mat[tex].data, tuple(max_res)) for mat in materials), dim=2) # Lay out all textures horizontally, NHWC so dim2 is x
+                layout.append(util.scale_img_nhwc(mat[tex].data, tuple(max_res)))
+                print('tex shape {}, max_res {}'.format(mat[tex].data.shape, max_res))
+            print('len layout = {}'.format(len(layout)))
+            
+            #pdb.set_trace() 
+            tex_data = torch.cat(tuple(layout), dim=2) # Lay out all textures horizontally, NHWC so dim2 is x
             tex_data = _upscale_replicate(tex_data, full_res)
             uber_material[tex] = texture.Texture2D(tex_data)
 
