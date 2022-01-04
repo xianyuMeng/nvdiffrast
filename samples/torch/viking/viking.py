@@ -13,7 +13,7 @@ import Obj
 
 import pdb
 
-proj_mtx = util.projection(x=0.4, f=1000.0)
+proj_mtx = util.projection(x=0.4, f=10)
 
 def printlog(log_fn, data):
     print(data)
@@ -22,7 +22,7 @@ def printlog(log_fn, data):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--outdir', help = 'output dir', default = './')
-    parser.add_argument('--ref', help = 'path to the high-res mesh', required = True)
+    parser.add_argument('--ref', help = 'path to the high-res mesh', required = False)
     parser.add_argument('--base', help = 'path to the low-res mesh', required = True)
     parser.add_argument('--log', help = 'log file name', default = 'log.txt')
     parser.add_argument('--b', help = 'batch size', default = 1, type = int)
@@ -37,7 +37,7 @@ def main():
 
 
 def transform_pos(mtx, pos):
-    pdb.set_trace()
+    #pdb.set_trace()
     t_mtx = torch.from_numpy(mtx).cuda() if isinstance(mtx, np.ndarray) else mtx
     #t_mtx = torch.from_numpy(mtx).cuda()
     posw = torch.cat([pos, torch.ones([pos.shape[0], 1]).cuda()], axis=1)
@@ -47,7 +47,7 @@ def transform_pos(mtx, pos):
     return out.permute(2, 1, 0)
 
 def render(glctx, mtx, vertex, triangle, texcoord,uv_idx, tex, resolution: int):
-    pdb.set_trace()
+    #pdb.set_trace()
     vertex_clip    = transform_pos(mtx, vertex)
     #vertex_clip (1, num_vertices, 3, 1)
     # glctx, pos, tri, resolution, ranges=None, grad_db=True
@@ -83,16 +83,19 @@ def opt_viking(
         resolution=256):
     #material_dict, mface, vface, tface, nface, vertex, normal, texcoord = readObj(ref)
 
-    ref_mesh = Obj.readObj(ref)
+    #ref_mesh = Obj.readObj(ref)
     base_mesh = Obj.readObj(base)
 
-    base_mesh = Obj.center_mesh(base_mesh, ref_mesh)
+    #base_mesh = Obj.center_mesh(base_mesh, ref_mesh)
 
     # Create position/triangle index tensors
-    triangles = torch.from_numpy(ref_mesh['vface'].astype(np.int32)).cuda()
-    vertex = torch.from_numpy(ref_mesh['vertex'].astype(np.float32)).cuda()
-    uv_idx = torch.from_numpy(ref_mesh['tface'].astype(np.int32)).cuda()
-    texcoord = torch.from_numpy(ref_mesh['texcoord']).cuda()
+    triangles = torch.from_numpy(base_mesh['vface'].astype(np.int32)).cuda()
+    vertex = torch.from_numpy(base_mesh['vertex'].astype(np.float32)).cuda()
+    uv_idx = torch.from_numpy(base_mesh['tface'].astype(np.int32)).cuda()
+    if base_mesh['texcoord'].size == 0:
+        base_mesh['texcoord'] = np.random.random_sample([vertex.shape[0], 2])
+        
+    texcoord = torch.from_numpy(base_mesh['texcoord'].astype(np.float32)).cuda()
     
     pdb.set_trace()
 
@@ -116,7 +119,9 @@ def opt_viking(
     ang = 0.0
     texloss_avg = []
     for it in range(max_iter + 1):
-        mvp, campos, lightpos = buildMtx(batch = 1)
+        #mvp, campos, lightpos = buildMtx(batch = 1)
+        mvp = np.eye(4, dtype = np.float32).reshape((1,4,4))
+        
         color_opt = render(glctx, mvp, vertex.contiguous(), triangles.contiguous(), texcoord.contiguous(), uv_idx.contiguous(), tex, resolution = resolution)
         img_opt = color_opt[0].detach().cpu().numpy()[::-1]
         util.save_image(os.path.join(output_dir, '%d.png'%it), img_opt)
