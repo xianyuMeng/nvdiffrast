@@ -114,13 +114,14 @@ def opt_viking(
 
 
     # Render.
-    max_iter = 20000
+    max_iter = 20
     
     ang = 0.0
     texloss_avg = []
     for it in range(max_iter + 1):
         #mvp, campos, lightpos = buildMtx(batch = 1)
-        mvp = np.eye(4, dtype = np.float32).reshape((1,4,4))
+        mvp = util.random_rotation_translation(0.1)
+        mvp = mvp.reshape((1,4,4)).astype(np.float32)
         
         color_opt = render(glctx, mvp, vertex.contiguous(), triangles.contiguous(), texcoord.contiguous(), uv_idx.contiguous(), tex, resolution = resolution)
         img_opt = color_opt[0].detach().cpu().numpy()[::-1]
